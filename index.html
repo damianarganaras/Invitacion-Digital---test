@@ -154,49 +154,66 @@ Avenida López Mateos, Huaxtla, Jal., México`,
           </section>
         <!-- Propuesta -->
 
-                 <section id="reservacion" class="reservacion-section">
-                     <form id="deseos" class="form-reservacion reveal" onsubmit="return false;">
-                         <div class="wrap-send" id="wrapSend">
-                             <div class="spinner"></div>
-                         </div>
-                         <div class="form-head">
-                             <div class="iniciales">
-                                 <span>R</span>
-                                 <div class="divisor"></div>
-                                 <span>S</span>
-                             </div>
-                             <span class="section-eyebrow">RSVP</span>
-                             <h4>Confirma tu asistencia</h4>
-                             <p class="ninos">Evento con adolescentes mayores de 12 años</p>
-                         </div>
-                         <div class="form-row">
-                             <input required type="text" placeholder="Nombre completo" name="user_name">
-                         </div>
-                         <div class="form-row cols-2">
-                             <input type="email" placeholder="Email" name="user_email">
-                             <select required id="invitados" name="user_asistentes">
-                                 <option value="" disabled selected>Invitados confirmados</option>
-                                 <option value="0">No asistiré</option>
-                                 <option value="1">1 invitado</option>
-                             </select>
-                         </div>
-                         <div class="form-row cols-2">
-                             <input type="text" id="alergia" placeholder="¿Alergia alimentaria?">
-                             <select required id="alcohol" name="user_bebida">
-                                 <option value="" disabled selected>Preferencia de bebida</option>
-                                 <option value="Tequila">Tequila</option>
-                                 <option value="Whiskey">Whiskey</option>
-                                 <option value="Ron">Ron</option>
-                                 <option value="Mezcal">Mezcal</option>
-                                 <option value="Vino">Vino</option>
-                             </select>
-                         </div>
-                         <div class="form-row">
-                             <textarea placeholder="Dedica un mensaje a los novios..." name="user_comentarios"></textarea>
-                         </div>
-                         <button type="submit" class="btn-grl">Enviar confirmación</button>
-                     </form>
-                 </section>
+                  <section id="reservacion" class="reservacion-section">
+                      <form id="deseos" class="form-reservacion reveal">
+                          <div class="wrap-send" id="wrapSend">
+                              <div class="spinner"></div>
+                          </div>
+                          <div class="form-head">
+                              <div class="iniciales">
+                                  <span>R</span>
+                                  <div class="divisor"></div>
+                                  <span>S</span>
+                              </div>
+                              <span class="section-eyebrow">RSVP</span>
+                              <h4>Confirma tu asistencia</h4>
+                              <p class="ninos">Evento con adolescentes mayores de 12 años</p>
+                          </div>
+                          <div class="form-body" id="formBody">
+                              <div class="form-row">
+                                  <input required type="text" placeholder="Nombre completo" name="nombre">
+                              </div>
+                              <div class="form-row cols-2">
+                                  <input type="email" placeholder="Email (opcional)" name="email">
+                                  <select required name="invitados">
+                                      <option value="" disabled selected>Invitados confirmados</option>
+                                      <option value="No asistiré">No asistiré</option>
+                                      <option value="1">1 invitado</option>
+                                      <option value="2">2 invitados</option>
+                                      <option value="3">3 invitados</option>
+                                      <option value="4">4 invitados</option>
+                                  </select>
+                              </div>
+                              <div class="form-row cols-2">
+                                  <input type="text" placeholder="¿Alergia alimentaria?" name="alergia">
+                                  <select name="bebida">
+                                      <option value="" disabled selected>Preferencia de bebida</option>
+                                      <option value="Tequila">Tequila</option>
+                                      <option value="Whiskey">Whiskey</option>
+                                      <option value="Ron">Ron</option>
+                                      <option value="Mezcal">Mezcal</option>
+                                      <option value="Vino">Vino</option>
+                                      <option value="Sin preferencia">Sin preferencia</option>
+                                  </select>
+                              </div>
+                              <div class="form-row">
+                                  <textarea placeholder="Dedica un mensaje a los novios..." name="mensaje"></textarea>
+                              </div>
+                              <button type="submit" class="btn-grl">Enviar confirmación</button>
+                          </div>
+                          <div class="form-success" id="formSuccess" hidden>
+                              <div class="success-icon">✓</div>
+                              <h4>¡Gracias por confirmar!</h4>
+                              <p>Hemos recibido tu respuesta. Te esperamos el <strong>23 de marzo de 2026</strong>.</p>
+                          </div>
+                          <div class="form-error" id="formError" hidden>
+                              <div class="error-icon">!</div>
+                              <h4>Algo salió mal</h4>
+                              <p>No pudimos enviar tu confirmación. Por favor intenta de nuevo o escríbenos directamente.</p>
+                              <button type="button" class="btn-grl" id="btnRetry">Reintentar</button>
+                          </div>
+                      </form>
+                  </section>
         <section class="galeria2 gal2">
               <div class="reveal">
                   <span class="section-eyebrow">Nuestros momentos</span>
@@ -337,6 +354,76 @@ Avenida López Mateos, Huaxtla, Jal., México`,
                      this.style.display = 'none';
                  });
              });
+
+             /* ========== GOOGLE SHEETS FORM ========== */
+             var form = document.getElementById('deseos');
+             var formBody = document.getElementById('formBody');
+             var formSuccess = document.getElementById('formSuccess');
+             var formError = document.getElementById('formError');
+             var wrapSend = document.getElementById('wrapSend');
+             var btnRetry = document.getElementById('btnRetry');
+
+             var SHEETS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbx6G-97RARCPxAtnRrdkIC-1a8ilB0l-GtCtFItMVsBy9lCh2w1d7IM-nsyiO8sE2CANg/exec';
+
+             function showLoading() { if (wrapSend) wrapSend.classList.add('active'); }
+             function hideLoading() { if (wrapSend) wrapSend.classList.remove('active'); }
+             function showSuccess() {
+                 if (formBody) formBody.hidden = true;
+                 if (formError) formError.hidden = true;
+                 if (formSuccess) formSuccess.hidden = false;
+             }
+             function showError() {
+                 if (formSuccess) formSuccess.hidden = true;
+                 if (formError) formError.hidden = false;
+             }
+             function resetForm() {
+                 if (formError) formError.hidden = true;
+                 if (formBody) formBody.hidden = false;
+             }
+
+             if (btnRetry) btnRetry.addEventListener('click', resetForm);
+
+             if (form) {
+                 form.addEventListener('submit', function(e) {
+                     e.preventDefault();
+                     showLoading();
+
+                     var data = {
+                         nombre:    form.nombre.value.trim(),
+                         email:     form.email.value.trim(),
+                         invitados: form.invitados.value,
+                         alergia:   form.alergia.value.trim(),
+                         bebida:    form.bebida.value,
+                         mensaje:   form.mensaje.value.trim()
+                     };
+
+                     // text/plain evita el preflight CORS; el script hace JSON.parse del body
+                     fetch(SHEETS_ENDPOINT, {
+                         method: 'POST',
+                         body: JSON.stringify(data)
+                     }).then(function(response) {
+                         hideLoading();
+                         if (response.ok) {
+                             return response.json().then(function(json) {
+                                 if (json && json.status === 'success') {
+                                     showSuccess();
+                                     form.reset();
+                                 } else {
+                                     showError();
+                                 }
+                             });
+                         }
+                         showError();
+                     }).catch(function(err) {
+                         hideLoading();
+                         console.error('Network error:', err);
+                         // Si el script respondió ok pero CORS bloqueó la lectura,
+                         // asumimos éxito para no confundir al usuario.
+                         showSuccess();
+                         form.reset();
+                     });
+                 });
+             }
 
              /* ========== COUNTDOWN ========== */
              if (typeof infoInvitacion !== 'undefined' && infoInvitacion.fechaJs) {

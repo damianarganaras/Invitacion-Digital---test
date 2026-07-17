@@ -894,6 +894,54 @@ h1, h2, h3, h4, h5 { font-weight: 400; line-height: 1.2; }
   animation: spin 0.9s linear infinite;
 }
 
+/* Success / Error states */
+.form-success, .form-error {
+  text-align: center;
+  padding: 32px 16px;
+  animation: fadeInUp 0.6s var(--ease-out);
+}
+.form-success[hidden], .form-error[hidden] { display: none; }
+.success-icon, .error-icon {
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Playfair Display', serif;
+  font-size: 2.2rem;
+  color: #fff;
+  font-weight: 600;
+}
+.success-icon {
+  background: linear-gradient(135deg, #8BC34A, #689F38);
+  box-shadow: 0 12px 32px rgba(104, 159, 56, 0.3);
+  animation: pulse 2s ease-in-out infinite;
+}
+.error-icon {
+  background: linear-gradient(135deg, #E57373, #C62828);
+  box-shadow: 0 12px 32px rgba(198, 40, 40, 0.25);
+}
+.form-success h4, .form-error h4 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.6rem;
+  color: var(--navy);
+  margin-bottom: 12px;
+  font-weight: 400;
+}
+.form-success p, .form-error p {
+  font-size: 1.05rem;
+  color: var(--text-light);
+  line-height: 1.7;
+  margin-bottom: 20px;
+  max-width: 380px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.form-error .btn-grl { max-width: 200px; margin: 0 auto; }
+.form-success strong { color: var(--gold-deep); }
+
 /* ============================================================
    RECOMMENDATIONS
    ============================================================ */
