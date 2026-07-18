@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-theme="classic">
+<html lang="es" data-theme="classic-monogram">
 <head>
     <meta name="format-detection" content="telephone=no">
     <meta charset="UTF-8">
@@ -11,19 +11,16 @@
     <meta property="og:url" content="https://miboda.love/demo6">
     <meta property="og:description" content="Después de 5 años de noviazgo, hemos decidido unirnos en matrimonio y nos complace que seas parte de nuestra celebración.">
     <meta name="description" content="Después de 5 años de noviazgo, hemos decidido unirnos en matrimonio y nos complace que seas parte de nuestra celebración.">
-    <meta name="keywords" content="boda, invitaciones de boda digitales, invitaciones virtuales">
     <link rel="icon" type="image/png" sizes="16x16" href="https://miboda.love/favs.ico/android-icon-192x192.png">
-    <meta name="author" content="metatags generator">
     <meta name="robots" content="index, follow">
-    <meta name="revisit-after" content="3 month">
     <title>miBoda.love | La boda de Romina y Santiago</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <!--
-      Fuentes por tema (todas cargadas para demo en vivo):
-      - minimalist / lineart: Cormorant Garamond, Lato, Playfair Display
-      - botanic / classic / boho / vintage / rustic / dark-moody:
-        Cormorant Garamond, Great Vibes, Lato, Playfair Display
+      Fuentes por tendencia (cargadas una sola vez para el demo en vivo):
+      - minimalist-editorial / modern-lineart : Cormorant Garamond, Lato, Playfair Display
+      - botanic-fineart / classic-monogram / boho-terracotta / vintage-gatsby /
+        rustic-quinta / dark-cyber-oled     : Cormorant Garamond, Great Vibes, Lato, Playfair Display
     -->
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,400;1,500&family=Great+Vibes&family=Lato:wght@300;400&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="./style.css">
@@ -42,20 +39,85 @@ Avenida López Mateos, Huaxtla, Jal., México`,
     </script>
 </head>
 <body>
-    <div class="theme-switcher" role="region" aria-label="Selector de tema">
-        <label for="themeSelect">Tema</label>
-        <select id="themeSelect" name="theme">
-            <option value="minimalist">Minimalist</option>
-            <option value="botanic">Botanic</option>
-            <option value="classic" selected>Classic</option>
-            <option value="boho">Boho</option>
-            <option value="lineart">Line Art</option>
-            <option value="vintage">Vintage</option>
-            <option value="rustic">Rustic</option>
-            <option value="dark-moody">Dark Moody</option>
-        </select>
-    </div>
 
+    <!-- ============ CONFIG: BOTÓN FLOTANTE ============ -->
+    <button class="config-btn" id="btnConfig" aria-label="Abrir configuración" aria-haspopup="dialog">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.01a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+    </button>
+
+    <!-- ============ CONFIG: MODAL NATIVO ============ -->
+    <dialog class="config-modal" id="configModal" aria-labelledby="configTitle">
+        <div class="config-modal-inner">
+            <header class="config-modal-head">
+                <div>
+                    <span class="config-eyebrow">Modo demo</span>
+                    <h2 id="configTitle">Configuración</h2>
+                </div>
+                <button type="button" class="config-close" id="btnCloseConfig" aria-label="Cerrar configuración">✕</button>
+            </header>
+
+            <!-- Tendencia visual -->
+            <div class="config-group">
+                <label class="config-label" for="trendSelect">Tendencia visual</label>
+                <select id="trendSelect" class="config-select">
+                    <option value="minimalist-editorial">Minimalist Editorial</option>
+                    <option value="botanic-fineart">Botanic Fine Art</option>
+                    <option value="classic-monogram" selected>Classic Monogram</option>
+                    <option value="boho-terracotta">Boho Terracotta</option>
+                    <option value="modern-lineart">Modern Line Art</option>
+                    <option value="vintage-gatsby">Vintage Gatsby</option>
+                    <option value="rustic-quinta">Rustic Quinta</option>
+                    <option value="dark-cyber-oled">Dark Cyber OLED</option>
+                </select>
+            </div>
+
+            <!-- Interruptores de secciones (RSVP nunca se desactiva) -->
+            <div class="config-group">
+                <span class="config-label">Secciones visibles</span>
+                <label class="switch-row">
+                    <span class="switch-text">Cuenta regresiva</span>
+                    <input type="checkbox" class="switch" data-section="countdown" checked>
+                </label>
+                <label class="switch-row">
+                    <span class="switch-text">Mesa de regalos</span>
+                    <input type="checkbox" class="switch" data-section="regalos" checked>
+                </label>
+                <label class="switch-row">
+                    <span class="switch-text">Código de vestimenta</span>
+                    <input type="checkbox" class="switch" data-section="dresscode" checked>
+                </label>
+                <label class="switch-row">
+                    <span class="switch-text">Sugerencias de canciones</span>
+                    <input type="checkbox" class="switch" data-section="canciones" checked>
+                </label>
+                <p class="config-hint">El formulario RSVP siempre permanece activo.</p>
+            </div>
+
+            <!-- Layout de galería -->
+            <div class="config-group">
+                <span class="config-label">Layout de la galería</span>
+                <div class="layout-options" role="radiogroup" aria-label="Layout de galería">
+                    <label class="layout-option">
+                        <input type="radio" name="galleryLayout" value="grid" checked>
+                        <span>Grid bimodal</span>
+                    </label>
+                    <label class="layout-option">
+                        <input type="radio" name="galleryLayout" value="carousel">
+                        <span>Carousel</span>
+                    </label>
+                    <label class="layout-option">
+                        <input type="radio" name="galleryLayout" value="stack">
+                        <span>Stack cascada</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </dialog>
+
+    <!-- ============ MODAL BIENVENIDA ============ -->
     <div class="modal-bienvenida" id="modalWelcome">
         <div class="modal-bienvenida-body">
             <div class="modal-lateral-nombres">Romina &amp; Santiago</div>
@@ -90,6 +152,7 @@ Avenida López Mateos, Huaxtla, Jal., México`,
             <source src="img/musica.mp3" type="audio/mpeg">
         </audio>
 
+        <!-- HERO -->
         <section id="intro" class="intro">
             <div class="intro-frame" aria-hidden="true"></div>
             <div class="intro-circulo">
@@ -105,6 +168,7 @@ Avenida López Mateos, Huaxtla, Jal., México`,
             </a>
         </section>
 
+        <!-- SAVE THE DATE -->
         <section id="invitacion" class="invitacion-section">
             <div class="container">
                 <div class="invitacion-row reveal">
@@ -122,7 +186,7 @@ Avenida López Mateos, Huaxtla, Jal., México`,
                     </div>
                 </div>
                 <div class="event-container">
-                    <div class="event-wrap reveal">
+                    <div class="event-wrap reveal" data-reveal="left">
                         <div class="event-icon">💒</div>
                         <h3>Ceremonia</h3>
                         <p class="event-place">"Finca San Javier"<br>Avenida López Mateos, Huaxtla, Jal., México</p>
@@ -131,7 +195,7 @@ Avenida López Mateos, Huaxtla, Jal., México`,
                             <a target="_blank" rel="noopener" class="btn-grl" href="https://www.google.com/maps/place/Finca+San+Javier/@20.7294109,-103.662369,17z">Cómo llegar</a>
                         </div>
                     </div>
-                    <div class="event-wrap reveal">
+                    <div class="event-wrap reveal" data-reveal="right">
                         <div class="event-icon">🥂</div>
                         <h3>Fiesta</h3>
                         <p class="event-place">"Finca San Javier"<br>Avenida López Mateos, Huaxtla, Jal., México</p>
@@ -144,14 +208,16 @@ Avenida López Mateos, Huaxtla, Jal., México`,
             </div>
         </section>
 
-        <section class="countdown-section reveal">
+        <!-- COUNTDOWN (toggleable) -->
+        <section class="countdown-section reveal" id="countdown-section" data-reveal="scale">
             <div class="countdown-label">Faltan para el gran día</div>
             <div class="contador-container" id="contador"></div>
         </section>
 
+        <!-- HISTORIA -->
         <section id="propuesta-section">
             <div class="propuesta-bg" aria-hidden="true"></div>
-            <div class="propuesta-wrap reveal">
+            <div class="propuesta-wrap reveal" data-reveal="scale">
                 <div class="propuesta-icon">💍</div>
                 <span class="propuesta-eyebrow">Nuestra historia</span>
                 <div class="propuesta-text">
@@ -164,6 +230,7 @@ Avenida López Mateos, Huaxtla, Jal., México`,
             </div>
         </section>
 
+        <!-- RSVP (siempre visible) -->
         <section id="reservacion" class="reservacion-section">
             <form id="deseos" class="form-reservacion reveal">
                 <div class="wrap-send" id="wrapSend">
@@ -207,7 +274,7 @@ Avenida López Mateos, Huaxtla, Jal., México`,
                         </select>
                     </div>
                     <div class="form-row">
-                        <textarea placeholder="Dedica un mensaje a los novios..." name="mensaje"></textarea>
+                        <textarea placeholder="Dedica un mensaje a los novios (y tu canción sugerida)..." name="mensaje"></textarea>
                     </div>
                     <button type="submit" class="btn-grl">Enviar confirmación</button>
                 </div>
@@ -225,7 +292,8 @@ Avenida López Mateos, Huaxtla, Jal., México`,
             </form>
         </section>
 
-        <section class="galeria2 gal2">
+        <!-- GALERÍA (layout conmutado por data-layout) -->
+        <section class="galeria2 gal2" id="galeria" data-layout="grid">
             <div class="reveal">
                 <span class="section-eyebrow">Nuestros momentos</span>
                 <h2>Galería de fotos</h2>
@@ -245,6 +313,76 @@ Avenida López Mateos, Huaxtla, Jal., México`,
             </div>
         </section>
 
+        <!-- DRESS CODE (toggleable) -->
+        <section class="rec-block" id="dresscode-section">
+            <div class="reveal">
+                <span class="section-eyebrow">Dress code</span>
+                <h2>Código de vestimenta</h2>
+                <p class="rec-block-sub">Etiqueta rigurosa para una noche inolvidable</p>
+            </div>
+            <div class="recomendaciones-grid reveal">
+                <div class="wrap-recomendacion">
+                    <div class="rec-icon">👗</div>
+                    <div class="titulo-recomendacion">Dress code mujeres</div>
+                    <p class="rec-vestimenta">Vestido largo de noche</p>
+                </div>
+                <div class="wrap-recomendacion">
+                    <div class="rec-icon">🤵</div>
+                    <div class="titulo-recomendacion">Dress code hombres</div>
+                    <p class="rec-vestimenta">Frac, Chaqué o Esmoquin</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- MESA DE REGALOS (toggleable) -->
+        <section class="rec-block rec-block--alt" id="regalos-section">
+            <div class="reveal">
+                <span class="section-eyebrow">Regalos</span>
+                <h2>Mesa de regalos</h2>
+                <p class="rec-block-sub">Su presencia es el mejor regalo; si desean tener un detalle:</p>
+            </div>
+            <div class="recomendaciones-grid reveal">
+                <div class="wrap-recomendacion">
+                    <div class="rec-icon">🎁</div>
+                    <div class="titulo-recomendacion">Mesa de regalos</div>
+                    <p>Liverpool · Evento: 999999</p>
+                    <a class="btn-grl" href="https://www.liverpool.com.mx" target="_blank" rel="noopener">Ver mesa</a>
+                </div>
+                <div class="wrap-recomendacion">
+                    <div class="rec-icon">🏦</div>
+                    <div class="titulo-recomendacion">Transferencia</div>
+                    <p class="rec-bank">BBVA<br>Tarjeta: 2100 0098 9888 4332</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SUGERENCIAS DE CANCIONES (toggleable) -->
+        <section class="rec-block" id="canciones-section">
+            <div class="reveal">
+                <span class="section-eyebrow">Música</span>
+                <h2>Sugerencias de canciones</h2>
+                <p class="rec-block-sub">Ayúdanos a armar la playlist de la fiesta. Déjanos tu canción en el mensaje del formulario RSVP.</p>
+            </div>
+            <div class="recomendaciones-grid reveal">
+                <div class="wrap-recomendacion">
+                    <div class="rec-icon">🎶</div>
+                    <div class="titulo-recomendacion">Para el vals</div>
+                    <p>¿Cuál no puede faltar en el momento más emotivo?</p>
+                </div>
+                <div class="wrap-recomendacion">
+                    <div class="rec-icon">🕺</div>
+                    <div class="titulo-recomendacion">Para la pista</div>
+                    <p>Esa canción que te hace levantarte de la silla.</p>
+                </div>
+                <div class="wrap-recomendacion">
+                    <div class="rec-icon">🎤</div>
+                    <div class="titulo-recomendacion">Karaoke sorpresa</div>
+                    <p>Anímate a cantar con los novios al final de la noche.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- DETALLES (siempre visible) -->
         <section class="recomendaciones-section" id="recomendaciones">
             <div class="reveal">
                 <span class="section-eyebrow">Detalles del evento</span>
@@ -253,33 +391,12 @@ Avenida López Mateos, Huaxtla, Jal., México`,
             </div>
             <div class="recomendaciones-grid reveal">
                 <div class="wrap-recomendacion">
-                    <div class="rec-icon rec-icon--dress"></div>
-                    <div class="titulo-recomendacion">Dress code mujeres</div>
-                    <p class="rec-vestimenta">Vestido largo de noche</p>
-                </div>
-                <div class="wrap-recomendacion">
-                    <div class="rec-icon rec-icon--suit"></div>
-                    <div class="titulo-recomendacion">Dress code hombres</div>
-                    <p class="rec-vestimenta">Frac, Chaqué o Esmoquin</p>
-                </div>
-                <div class="wrap-recomendacion">
-                    <div class="rec-icon rec-icon--gift"></div>
-                    <div class="titulo-recomendacion">Mesa de regalos</div>
-                    <p>Liverpool · Evento: 999999</p>
-                    <a class="btn-grl" href="https://www.liverpool.com.mx" target="_blank" rel="noopener">Ver mesa</a>
-                </div>
-                <div class="wrap-recomendacion">
-                    <div class="rec-icon rec-icon--bank"></div>
-                    <div class="titulo-recomendacion">Transferencia</div>
-                    <p class="rec-bank">BBVA<br>Tarjeta: 2100 0098 9888 4332</p>
-                </div>
-                <div class="wrap-recomendacion">
-                    <div class="rec-icon rec-icon--hotel"></div>
+                    <div class="rec-icon">🏨</div>
                     <div class="titulo-recomendacion">Hospedaje</div>
                     <p>Hoteles recomendados cerca del evento.</p>
                 </div>
                 <div class="wrap-recomendacion">
-                    <div class="rec-icon rec-icon--camera"></div>
+                    <div class="rec-icon">📷</div>
                     <div class="titulo-recomendacion">Comparte tus fotos</div>
                     <p class="hashtag-rec">#RominaAndSantiago</p>
                 </div>
@@ -301,18 +418,12 @@ Avenida López Mateos, Huaxtla, Jal., México`,
         "@id": "https://miboda.love",
         "@type": "Organization",
         "url": "https://miboda.love",
-        "logo": "https://instagram.fmex5-1.fna.fbcdn.net/vp/de9747a15125663decff080fad38baaa/5CEF1693/t51.2885-19/s320x320/24174900_715423661996025_8793383877096767488_n.jpg?_nc_ht=instagram.fmex5-1.fna.fbcdn.net",
         "contactPoint": [{
             "@type": "ContactPoint",
             "contactType": "sales",
             "email": "hola@miboda.love",
             "telephone": "+525621883034"
-        }],
-        "sameAs": [
-            "https://www.facebook.com/miboda.love",
-            "https://www.instagram.com/miboda.love",
-            "https://twitter.com/mibodalove"
-        ]
+        }]
     }
     </script>
     <script src="./app.js" defer></script>

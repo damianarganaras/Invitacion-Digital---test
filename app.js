@@ -1,169 +1,301 @@
+/* ============================================================
+   INVITACIÓN DIGITAL — Orquestador de previsualización
+   Módulos:
+   1. ConfigStore     → estado (tema, secciones, layout) + localStorage
+   2. ConfigPanel     → <dialog> nativo con fallback, switches y radios
+   3. ParticlesEngine → pétalos / bokeh según tendencia activa
+   4. RevealFX        → IntersectionObserver + clase .visible
+   5. Módulos base    → modal bienvenida, header, menú, música,
+                        formulario RSVP (Google Sheets) y countdown
+   ============================================================ */
 (function () {
   'use strict';
 
-  /* ========== THEME SWITCHER ========== */
-  var THEME_KEY = 'invitacion-theme';
-  var PETAL_THEMES = { botanic: 1, boho: 1 };
-  var BOKEH_THEMES = { 'dark-moody': 1, vintage: 1 };
-  var DEFAULT_THEME = 'classic';
+  /* ============================================================
+     1. CONFIG STORE
+     ============================================================ */
+  var CONFIG_KEY = 'invitacion-config';
+  var THEMES = [
+    'minimalist-editorial', 'botanic-fineart', 'classic-monogram',
+    'boho-terracotta', 'modern-lineart', 'vintage-gatsby',
+    'rustic-quinta', 'dark-cyber-oled'
+  ];
+  var LAYOUTS = ['grid', 'carousel', 'stack'];
+  /* Mapa switch → id de sección en el DOM (RSVP excluido a propósito) */
+  var SECTION_IDS = {
+    countdown: 'countdown-section',
+    regalos: 'regalos-section',
+    dresscode: 'dresscode-section',
+    canciones: 'canciones-section'
+  };
+  var DEFAULT_CONFIG = {
+    theme: 'classic-monogram',
+    sections: { countdown: true, regalos: true, dresscode: true, canciones: true },
+    galleryLayout: 'grid'
+  };
 
+  function loadConfig() {
+    try {
+      var raw = localStorage.getItem(CONFIG_KEY);
+      if (!raw) return clone(DEFAULT_CONFIG);
+      var c = JSON.parse(raw);
+      return {
+        theme: THEMES.indexOf(c.theme) > -1 ? c.theme : DEFAULT_CONFIG.theme,
+        sections: Object.assign({}, DEFAULT_CONFIG.sections, c.sections || {}),
+        galleryLayout: LAYOUTS.indexOf(c.galleryLayout) > -1 ? c.galleryLayout : DEFAULT_CONFIG.galleryLayout
+      };
+    } catch (e) {
+      return clone(DEFAULT_CONFIG);
+    }
+  }
+  function saveConfig() {
+    try { localStorage.setItem(CONFIG_KEY, JSON.stringify(config)); } catch (e) {}
+  }
+  function clone(o) { return JSON.parse(JSON.stringify(o)); }
+
+  var config = loadConfig();
   var root = document.documentElement;
-  var themeSelect = document.getElementById('themeSelect');
-  var particlesLayer = null;
-  var particleTimer = null;
-  var activeParticleMode = null;
 
-  function getTheme() {
-    return root.getAttribute('data-theme') || DEFAULT_THEME;
-  }
-
-  function setTheme(theme) {
-    if (!theme) theme = DEFAULT_THEME;
+  /* ============================================================
+     2. TEMA + SECCIONES + LAYOUT (aplicadores al DOM)
+     ============================================================ */
+  function applyTheme(theme) {
+    config.theme = theme;
     root.setAttribute('data-theme', theme);
-    try { localStorage.setItem(THEME_KEY, theme); } catch (e) {}
-    if (themeSelect && themeSelect.value !== theme) themeSelect.value = theme;
-    syncParticles(theme);
+    if (trendSelect && trendSelect.value !== theme) trendSelect.value = theme;
+    ParticlesEngine.sync(theme); // limpia y reinicia efectos
+    saveConfig();
   }
 
-  function initTheme() {
-    var saved = null;
-    try { saved = localStorage.getItem(THEME_KEY); } catch (e) {}
-    var initial = saved || (themeSelect && themeSelect.value) || root.getAttribute('data-theme') || DEFAULT_THEME;
-    setTheme(initial);
-    if (themeSelect) {
-      themeSelect.addEventListener('change', function () {
-        setTheme(themeSelect.value);
+  function applySections() {
+    Object.keys(SECTION_IDS).forEach(function (key) {
+      var el = document.getElementById(SECTION_IDS[key]);
+      if (el) el.classList.toggle('section-disabled', !config.sections[key]);
+    });
+    sectionSwitches.forEach(function (sw) {
+      sw.checked = !!config.sections[sw.getAttribute('data-section')];
+    });
+  }
+
+  function applyGalleryLayout() {
+    var galeria = document.getElementById('galeria');
+    if (galeria) galeria.setAttribute('data-layout', config.galleryLayout);
+    layoutRadios.forEach(function (r) {
+      r.checked = (r.value === config.galleryLayout);
+    });
+  }
+
+  /* ============================================================
+     3. CONFIG PANEL (<dialog> con fallback para Safari viejo)
+     ============================================================ */
+  var btnConfig = document.getElementById('btnConfig');
+  var btnCloseConfig = document.getElementById('btnCloseConfig');
+  var dialog = document.getElementById('configModal');
+  var trendSelect = document.getElementById('trendSelect');
+  var sectionSwitches = Array.prototype.slice.call(document.querySelectorAll('input.switch[data-section]'));
+  var layoutRadios = Array.prototype.slice.call(document.querySelectorAll('input[name="galleryLayout"]'));
+  var dialogSupported = !!(dialog && typeof dialog.showModal === 'function');
+
+  function openConfig() {
+    if (!dialog) return;
+    if (dialogSupported) dialog.showModal();
+    else dialog.classList.add('fallback-open');
+  }
+  function closeConfig() {
+    if (!dialog) return;
+    if (dialogSupported && dialog.open) dialog.close();
+    dialog.classList.remove('fallback-open');
+  }
+
+  if (btnConfig) btnConfig.addEventListener('click', openConfig);
+  if (btnCloseConfig) btnCloseConfig.addEventListener('click', closeConfig);
+
+  if (dialog) {
+    /* Click fuera del panel (backdrop) cierra el modal */
+    dialog.addEventListener('click', function (e) {
+      var r = dialog.getBoundingClientRect();
+      var inside =
+        e.clientX >= r.left && e.clientX <= r.right &&
+        e.clientY >= r.top && e.clientY <= r.bottom;
+      if (!inside) closeConfig();
+    });
+    /* Escape en fallback */
+    if (!dialogSupported) {
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') closeConfig();
       });
     }
   }
 
-  /* ========== PARTICLES (CSS-animated, DOM-cleaned) ========== */
-  function ensureParticlesLayer() {
-    if (particlesLayer && document.body.contains(particlesLayer)) return particlesLayer;
-    particlesLayer = document.createElement('div');
-    particlesLayer.className = 'particles-layer';
-    particlesLayer.setAttribute('aria-hidden', 'true');
-    document.body.appendChild(particlesLayer);
-    return particlesLayer;
+  /* Selector de tendencia: aplica tema + reinicia partículas al instante */
+  if (trendSelect) {
+    trendSelect.addEventListener('change', function () {
+      applyTheme(trendSelect.value);
+    });
   }
 
-  function clearParticles() {
-    if (particleTimer) {
-      clearInterval(particleTimer);
-      particleTimer = null;
-    }
-    if (particlesLayer) {
-      particlesLayer.innerHTML = '';
-    }
-    activeParticleMode = null;
-  }
+  /* Interruptores de secciones */
+  sectionSwitches.forEach(function (sw) {
+    sw.addEventListener('change', function () {
+      var key = sw.getAttribute('data-section');
+      config.sections[key] = sw.checked;
+      applySections();
+      saveConfig();
+    });
+  });
 
-  function spawnPetal(layer) {
-    var el = document.createElement('span');
-    el.className = 'particle particle--petal';
-    var left = Math.random() * 100;
-    var dur = 6 + Math.random() * 7;
-    var drift = (Math.random() * 120 - 60) + 'px';
-    var spin = (200 + Math.random() * 400) * (Math.random() > 0.5 ? 1 : -1) + 'deg';
-    var sway = (2 + Math.random() * 3) + 's';
-    var size = (8 + Math.random() * 10) + 'px';
-    el.style.left = left + 'vw';
-    el.style.setProperty('--dur', dur + 's');
-    el.style.setProperty('--drift', drift);
-    el.style.setProperty('--spin', spin);
-    el.style.setProperty('--sway', sway);
-    el.style.setProperty('--particle-size', size);
-    el.style.opacity = String(0.55 + Math.random() * 0.4);
-    layer.appendChild(el);
-    window.setTimeout(function () {
-      if (el.parentNode) el.remove();
-    }, dur * 1000 + 80);
-  }
+  /* Radios de layout de galería */
+  layoutRadios.forEach(function (radio) {
+    radio.addEventListener('change', function () {
+      if (!radio.checked) return;
+      config.galleryLayout = radio.value;
+      applyGalleryLayout();
+      saveConfig();
+    });
+  });
 
-  function spawnBokeh(layer) {
-    var el = document.createElement('span');
-    el.className = 'particle particle--bokeh';
-    var left = Math.random() * 100;
-    var top = Math.random() * 100;
-    var dur = 8 + Math.random() * 10;
-    var sz = (6 + Math.random() * 22) + 'px';
-    var blur = (2 + Math.random() * 6) + 'px';
-    var dx = (Math.random() * 80 - 40) + 'px';
-    var dy = (-20 - Math.random() * 80) + 'px';
-    var scale = (0.6 + Math.random() * 1.2).toFixed(2);
-    var op = (0.25 + Math.random() * 0.45).toFixed(2);
-    el.style.left = left + 'vw';
-    el.style.top = top + 'vh';
-    el.style.setProperty('--dur', dur + 's');
-    el.style.setProperty('--sz', sz);
-    el.style.setProperty('--blur', blur);
-    el.style.setProperty('--dx', dx);
-    el.style.setProperty('--dy', dy);
-    el.style.setProperty('--scale', scale);
-    el.style.setProperty('--op', op);
-    layer.appendChild(el);
-    window.setTimeout(function () {
-      if (el.parentNode) el.remove();
-    }, dur * 1000 + 80);
-  }
+  /* ============================================================
+     4. PARTICLES ENGINE
+     - botanic-fineart / rustic-quinta  → pétalos con balanceo X
+     - vintage-gatsby / dark-cyber-oled → bokeh ascendente
+     Limpieza estricta al cambiar de tendencia (.remove())
+     ============================================================ */
+  var ParticlesEngine = (function () {
+    var PETAL_THEMES = { 'botanic-fineart': 1, 'rustic-quinta': 1 };
+    var BOKEH_THEMES = { 'vintage-gatsby': 1, 'dark-cyber-oled': 1 };
 
-  function startPetals() {
-    var layer = ensureParticlesLayer();
-    var max = window.matchMedia('(max-width: 480px)').matches ? 10 : 16;
-    var i;
-    for (i = 0; i < 6; i++) spawnPetal(layer);
-    particleTimer = setInterval(function () {
-      if (layer.childElementCount >= max) return;
-      spawnPetal(layer);
-    }, 420);
-  }
-
-  function startBokeh() {
-    var layer = ensureParticlesLayer();
-    var max = window.matchMedia('(max-width: 480px)').matches ? 12 : 20;
-    var i;
-    for (i = 0; i < 8; i++) spawnBokeh(layer);
-    particleTimer = setInterval(function () {
-      if (layer.childElementCount >= max) return;
-      spawnBokeh(layer);
-    }, 550);
-  }
-
-  function syncParticles(theme) {
+    var layer = null;
+    var timer = null;
     var mode = null;
-    if (PETAL_THEMES[theme]) mode = 'petal';
-    else if (BOKEH_THEMES[theme]) mode = 'bokeh';
 
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      clearParticles();
+    function reducedMotion() {
+      return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    }
+
+    function ensureLayer() {
+      if (layer && document.body.contains(layer)) return layer;
+      layer = document.createElement('div');
+      layer.className = 'particles-layer';
+      layer.setAttribute('aria-hidden', 'true');
+      document.body.appendChild(layer);
+      return layer;
+    }
+
+    /* Limpieza inmediata exigida por spec */
+    function clear() {
+      if (timer) { clearInterval(timer); timer = null; }
+      document.querySelectorAll('.particle').forEach(function (p) { p.remove(); });
+      mode = null;
+    }
+
+    function scheduleRemoval(el, durSec) {
+      window.setTimeout(function () {
+        if (el.parentNode) el.remove(); // evita fugas de memoria
+      }, durSec * 1000 + 80);
+    }
+
+    function spawnPetal(host) {
+      var el = document.createElement('span');
+      el.className = 'particle particle--petal';
+      var dur = 6 + Math.random() * 7;
+      el.style.left = (Math.random() * 100) + 'vw';
+      el.style.setProperty('--dur', dur + 's');
+      el.style.setProperty('--drift', (Math.random() * 120 - 60) + 'px'); /* balanceo X */
+      el.style.setProperty('--spin', ((200 + Math.random() * 400) * (Math.random() > 0.5 ? 1 : -1)) + 'deg');
+      el.style.setProperty('--sway', (2 + Math.random() * 3) + 's');
+      el.style.setProperty('--particle-size', (8 + Math.random() * 10) + 'px');
+      el.style.opacity = String(0.55 + Math.random() * 0.4);
+      host.appendChild(el);
+      scheduleRemoval(el, dur);
+    }
+
+    function spawnBokeh(host) {
+      var el = document.createElement('span');
+      el.className = 'particle particle--bokeh';
+      var dur = 9 + Math.random() * 9;
+      el.style.left = (Math.random() * 100) + 'vw';
+      el.style.top = (100 + Math.random() * 8) + 'vh'; /* nace bajo el viewport y asciende */
+      el.style.setProperty('--dur', dur + 's');
+      el.style.setProperty('--sz', (6 + Math.random() * 22) + 'px');
+      el.style.setProperty('--blur', (2 + Math.random() * 6) + 'px');
+      el.style.setProperty('--dx', (Math.random() * 80 - 40) + 'px');
+      el.style.setProperty('--scale', (0.6 + Math.random() * 1.2).toFixed(2));
+      el.style.setProperty('--op', (0.25 + Math.random() * 0.45).toFixed(2));
+      host.appendChild(el);
+      scheduleRemoval(el, dur);
+    }
+
+    function start(kind) {
+      var host = ensureLayer();
+      var isMobile = window.matchMedia('(max-width: 480px)').matches;
+      var max = kind === 'petal' ? (isMobile ? 10 : 16) : (isMobile ? 12 : 20);
+      var spawn = kind === 'petal' ? spawnPetal : spawnBokeh;
+      var initial = kind === 'petal' ? 6 : 8;
+      var interval = kind === 'petal' ? 420 : 550;
+      for (var i = 0; i < initial; i++) spawn(host);
+      timer = setInterval(function () {
+        if (document.hidden) return;             // ahorro de batería en pestaña oculta
+        if (host.childElementCount >= max) return;
+        spawn(host);
+      }, interval);
+    }
+
+    function sync(theme) {
+      var next = null;
+      if (PETAL_THEMES[theme]) next = 'petal';
+      else if (BOKEH_THEMES[theme]) next = 'bokeh';
+
+      if (reducedMotion()) { clear(); return; }
+      if (next === mode) return;
+      clear(); // elimina partículas del tema anterior antes de iniciar
+      if (next) {
+        mode = next;
+        start(next);
+      }
+    }
+
+    return { sync: sync, clear: clear };
+  })();
+
+  /* ============================================================
+     5. REVEAL FX — IntersectionObserver + .visible
+     ============================================================ */
+  (function initReveal() {
+    var reveals = document.querySelectorAll('.reveal');
+    var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduced || !('IntersectionObserver' in window)) {
+      reveals.forEach(function (el) { el.classList.add('visible'); });
       return;
     }
+    var obs = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          obs.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+    reveals.forEach(function (el) { obs.observe(el); });
+  })();
 
-    if (mode === activeParticleMode) return;
-    clearParticles();
-    if (mode === 'petal') {
-      activeParticleMode = 'petal';
-      startPetals();
-    } else if (mode === 'bokeh') {
-      activeParticleMode = 'bokeh';
-      startBokeh();
-    }
-  }
+  /* ============================================================
+     6. MÓDULOS BASE (lógica original preservada)
+     ============================================================ */
 
-  /* ========== WELCOME MODAL ========== */
+  /* ---- WELCOME MODAL ---- */
   var modal = document.getElementById('modalWelcome');
   var btn = document.getElementById('btnIngresar');
   if (btn) btn.addEventListener('click', function () { modal.classList.remove('visible'); });
   if (modal) modal.classList.add('visible');
 
-  /* ========== HEADER SCROLL EFFECT ========== */
+  /* ---- HEADER SCROLL EFFECT ---- */
   var header = document.querySelector('.site-header');
   window.addEventListener('scroll', function () {
     var y = window.scrollY;
     if (header) header.classList.toggle('scrolled', y > 60);
   }, { passive: true });
 
-  /* ========== MOBILE MENU ========== */
+  /* ---- MOBILE MENU ---- */
   var toggle = document.querySelector('.menu-toggle');
   var nav = document.querySelector('.header-nav');
   if (toggle && nav) {
@@ -175,7 +307,7 @@
     });
   }
 
-  /* ========== MUSIC BUTTON ========== */
+  /* ---- MUSIC BUTTON ---- */
   var btnMusica = document.getElementById('btnMusica');
   var audio = document.getElementById('audioBoda');
   if (btnMusica && audio) {
@@ -192,30 +324,14 @@
     audio.addEventListener('pause', function () { btnMusica.classList.remove('is-playing'); });
   }
 
-  /* ========== REVEAL ON SCROLL ========== */
-  var reveals = document.querySelectorAll('.reveal');
-  if ('IntersectionObserver' in window) {
-    var revealObs = new IntersectionObserver(function (entries) {
-      entries.forEach(function (entry) {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('in');
-          revealObs.unobserve(entry.target);
-        }
-      });
-    }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
-    reveals.forEach(function (el) { revealObs.observe(el); });
-  } else {
-    reveals.forEach(function (el) { el.classList.add('in'); });
-  }
-
-  /* ========== IMAGE FALLBACK ========== */
+  /* ---- IMAGE FALLBACK ---- */
   document.querySelectorAll('img').forEach(function (img) {
     img.addEventListener('error', function () {
       this.style.display = 'none';
     });
   });
 
-  /* ========== GOOGLE SHEETS FORM (RSVP) ========== */
+  /* ---- GOOGLE SHEETS FORM (RSVP) — INTACTO ---- */
   var form = document.getElementById('deseos');
   var formBody = document.getElementById('formBody');
   var formSuccess = document.getElementById('formSuccess');
@@ -285,7 +401,7 @@
     });
   }
 
-  /* ========== COUNTDOWN ========== */
+  /* ---- COUNTDOWN — INTACTO ---- */
   if (typeof infoInvitacion !== 'undefined' && infoInvitacion.fechaJs) {
     var target = new Date(infoInvitacion.fechaJs).getTime();
     var contEl = document.getElementById('contador');
@@ -312,6 +428,10 @@
     setInterval(updateCountdown, 1000);
   }
 
-  /* boot theme + particles */
-  initTheme();
+  /* ============================================================
+     BOOT: aplicar estado persistido
+     ============================================================ */
+  applyTheme(config.theme);
+  applySections();
+  applyGalleryLayout();
 })();
